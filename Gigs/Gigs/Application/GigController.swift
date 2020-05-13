@@ -66,7 +66,7 @@ class GigController {
         
     }
     
-
+    
     func signIn(with user: User, completion: @escaping (Error?) -> ()) {
         let signInURL = baseUrl.appendingPathComponent("users/login")
         
@@ -114,7 +114,7 @@ class GigController {
         
     }
     
-    func fetchAllGigs(completion: @escaping (Result<[Gig], NetworkError>) -> Void ){
+    func fetchAllGigs(completion: @escaping (Result<Bool, NetworkError>) -> Void ){
         guard let bearer = bearer else {
             completion(.failure(.noAuth))
             return
@@ -147,17 +147,17 @@ class GigController {
             
             do {
                 let gigNames = try decoder.decode([Gig].self, from: data)
-                completion(.success(gigNames))
-                self.gigs.append(contentsOf: gigNames)
+                completion(.success(true))
+                self.gigs = gigNames
             } catch {
                 completion(.failure(.decodingError))
             }
             
-    }.resume()
+        }.resume()
         
     }
     
-    func createGigs(with gig: Gig, completion: @escaping (Result<Gig, NetworkError>) -> Void ){
+    func createGigs(with gig: Gig, completion: @escaping (Result<Bool, NetworkError>) -> Void ){
         guard let bearer = bearer else {
             completion(.failure(.noAuth))
             return
@@ -168,18 +168,18 @@ class GigController {
         var request = URLRequest(url: newGigsUrl)
         request.httpMethod = HTTPMethod.post.rawValue
         request.setValue("Bearer \(bearer.token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
         
         do {
-            let jsonData = try JSONEncoder().encode(gig)
-            request.httpBody = jsonData
-            self.gigs.append(gig)
-            completion(.success(gig))
+            request.httpBody = try encoder.encode(gig)
         } catch {
-            completion(.failure(.encodingError))
-            return
+            NSLog("Error encoding gig: \(error)")
+            completion(.failure(.otherError))
         }
-      
+        
         
         URLSession.shared.dataTask(with: request) { (_, response, error) in
             if let response = response as? HTTPURLResponse, response.statusCode == 401 {
@@ -192,19 +192,9 @@ class GigController {
                 return
             }
             
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
-            
-            do {
-                let newGig = try encoder.encode(gig)
-                request.httpBody = newGig
-            } catch {
-                completion(.failure(.encodingError))
-            }
-            
-    }.resume()
-        
+            self.gigs.append(gig)
+            completion(.success(true))
+        }.resume()
     }
-    
 }
 

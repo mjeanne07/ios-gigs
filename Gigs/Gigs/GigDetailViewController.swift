@@ -25,9 +25,16 @@ class GigDetailViewController: UIViewController {
         
         gigController.createGigs(with: newGig) { (result) in
             guard (try? result.get()) != nil else {return}
-            
-            DispatchQueue.main.async {
-            self.navigationController?.popToRootViewController(animated: true)
+            do {
+                let success = try result.get()
+                if success {
+                    DispatchQueue.main.async {
+                        self.navigationController?.popToRootViewController(animated: true)
+                    }
+                    
+                }
+            } catch {
+                print("Unable to create new gig: \(error)")
             }
         }
     }
@@ -35,8 +42,6 @@ class GigDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         updateViews()
-        
-        // Do any additional setup after loading the view.
     }
     
     func updateViews() {
@@ -48,15 +53,4 @@ class GigDetailViewController: UIViewController {
             self.title = "New Gig"
         }
     }
-    
-    /*
-     // MARK: - Navigation
-     
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-     // Get the new view controller using segue.destination.
-     // Pass the selected object to the new view controller.
-     }
-     */
-    
 }

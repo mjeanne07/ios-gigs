@@ -10,15 +10,7 @@ import UIKit
 
 class GigsTableViewController: UITableViewController {
     
-    
     let gigController = GigController()
-    
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-    }
-    
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -27,32 +19,34 @@ class GigsTableViewController: UITableViewController {
         if gigController.bearer == nil {
             performSegue(withIdentifier: "LoginViewModalSegue", sender: self)
         } else  {
-            
-        gigController.fetchAllGigs { (result) in
-            do {
-                self.gigController.gigs = try result.get()
-            } catch {
-                if let error = error as? NetworkError {
-                    switch error {
-                    case .badAuth:
-                        print("Error: Bad authorization")
-                    case .badData:
-                        print("Error: Bad data")
-                    case .decodingError:
-                        print("Error: Decoding error")
-                    case .noAuth:
-                        print("Error: No authorization")
-                    case .otherError:
-                        print("Error: Other error")
-                    case .encodingError:
-                        print("Error: Encoding error")
+            gigController.fetchAllGigs { (result) in
+                do {
+                    let success = try result.get()
+                    if success {
+                        DispatchQueue.main.async {
+                            print("Successfully fetched all gigs")
+                            self.tableView.reloadData()
+                        }
+                    }
+                } catch {
+                    if let error = error as? NetworkError {
+                        switch error {
+                        case .badAuth:
+                            print("Error: Bad authorization")
+                        case .badData:
+                            print("Error: Bad data")
+                        case .decodingError:
+                            print("Error: Decoding error")
+                        case .noAuth:
+                            print("Error: No authorization")
+                        case .otherError:
+                            print("Error: Other error")
+                        case .encodingError:
+                            print("Error: Encoding error")
+                        }
                     }
                 }
             }
-        }
-        }
-        DispatchQueue.main.async {
-            self.tableView.reloadData()
         }
     }
     
@@ -60,15 +54,12 @@ class GigsTableViewController: UITableViewController {
     
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
         return gigController.gigs.count
-        
     }
     
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "GigCell", for: indexPath)
-        guard indexPath.row < gigController.gigs.count else {return cell}
         
         let gig = gigController.gigs[indexPath.row]
         let dateFormatter = DateFormatter()
@@ -98,7 +89,6 @@ class GigsTableViewController: UITableViewController {
             }
             guard let indexPath = tableView.indexPathForSelectedRow else { return }
             
-            guard indexPath.row < gigController.gigs.count else {return}
             detailVC.gig = gigController.gigs[indexPath.row]
             detailVC.gigController = gigController
         }
